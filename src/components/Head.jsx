@@ -8,40 +8,42 @@ import { VIDEO_SEARCH_API } from "../utils/constants";
 import { cacheResults } from "../utils/searchSlice";
 
 const Head = () => {
+  const [searchQuery, setsearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const dispatch = useDispatch();
   const handleToggleMenu = () => {
     dispatch(toggleMenu());
   };
-  const [searchText, setSearchText] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const searchCache = useSelector((store) => store.search);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchCache[searchText]) {
-        setSuggestions(searchCache[searchText]);
+      if (searchCache[searchQuery]) {
+        setSuggestions(searchCache[searchQuery]);
       } else {
-        getSuggestions(searchText);
+        getSuggestions(searchQuery);
       }
     }, 500);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [searchText]);
+  }, [searchQuery]);
 
-  const getSuggestions = async (searchquery) => {
+  const getSuggestions = async () => {
     const result = await fetch(
-      VIDEO_SEARCH_API.replace("SEARCHHERE", searchquery)
+      VIDEO_SEARCH_API.replace("SEARCHHERE", searchQuery)
     );
     const data = await result.json();
     setSuggestions(data.items);
-    
-    dispatch(cacheResults({
-      [searchText]: data.items
-    }))
+
+    dispatch(
+      cacheResults({
+        [searchQuery]: data.items,
+      })
+    );
   };
   return (
     <div className="grid grid-flow-col p-2 m-2 shadow-lg">
@@ -61,8 +63,8 @@ const Head = () => {
           <input
             type="text"
             className="w-1/2 border border-gray-400 rounded-l-full px-4"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setsearchQuery(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setShowSuggestions(false)}
           ></input>
@@ -70,7 +72,7 @@ const Head = () => {
             <img alt="search_icon" src={search} className="h-8"></img>
           </button>
         </div>
-        {suggestions && (
+        {showSuggestions && (
           <div className="fixed bg-white px-4 w-[35rem] shadow-2xl rounded-xl border border-gray-200">
             <ul>
               {suggestions.map((sugg) => {
